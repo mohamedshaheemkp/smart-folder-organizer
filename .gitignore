@@ -1,0 +1,24 @@
+# python cache
+
+__pycache__/
+*.pyc
+
+# pyinstaller files
+dist/
+build/
+*.spec
+
+# log files
+log.txt
+undo_log.txt
+*.log
+
+# os editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# virtual environments
+venv/
+.env/
