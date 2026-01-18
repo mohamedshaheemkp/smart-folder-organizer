@@ -9,5 +9,5 @@
         "Programs": [".exe", ".msi", ".dmg"]
     },
     "enable_unknown_folder": true,
-    "unknown_folder_name": "Others",
+    "unknown_folder_name": "Others"
 }
