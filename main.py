@@ -3,8 +3,9 @@ print("Smart Folder Organizer ")
 import os
 import shutil
 import time
+import json
 
-#log
+# log func
 
 def write_log(message):
     with open("log.txt", "a") as log:
@@ -14,8 +15,42 @@ def write_log(message):
 def write_undo(src, dst):
     with open("undo_log.txt", "a") as ulog:
         ulog.write(f"{dst}|{src}\n")
-         
-#i/p
+
+#undo fun
+
+def undo_changes():
+    if not os.path.exists("undo_log.txt"):
+        print("No undo log found.")
+        return
+
+    with open("undo_log.txt", "r") as file:
+        lines = file.readlines()
+    
+    if not lines:
+        print("No actions to undo.")
+        return
+
+    for line in reversed(lines):
+        dst, src = line.strip().split("|")
+
+        if os.path.exists(dst):
+            os,makedirs(os.path.dirname(src), exist_ok=True)
+            shutil.move(dst, src)
+            print(f"Reverted: {os.path.basename(dst)}")
+
+    open("undo_log.txt", "w").close()
+    write_log("Undo operation completed.")
+    print("Undo operation completed.")
+
+
+# user choice
+
+choice = input("Type 'undo' to revert last organization or press Enter to continue: ").strip().lower()
+if choice == "undo":
+    undo_changes()
+    exit()
+      
+# i/p
 
 fpath = input("Enter the folder path to organize: ")
 
@@ -27,21 +62,22 @@ if not os.path.isdir(fpath):
     print("The specified path is not a folder.")
     exit()
 
-#dry run option
+# dry run option
 
 dry_run = input("Do you want to do a dry run? (yes/no): ").strip().lower() == "yes"
 print("Dry run mode:", dry_run)
 
-# file extensions and their corresponding folders
+# load config
+try:
+    with open("config.json", "r") as cfg:
+        extensions = json.load(cfg)
+except Exception as e:
+    print("config.json not found.")
+    exit()
+except json.JSONDecodeError:
+    print("Invalid json format in config.json.")
+    exit()
 
-extensions = {
-        'Images': ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff'],
-        'Documents': ['.pdf', '.docx', '.txt', '.xlsx', '.pptx'],
-        'Audio': ['.mp3', '.wav', '.aac', '.flac'], 
-        'Videos': ['.mp4', '.avi', '.mov', '.mkv'],
-        'Archives': ['.zip', '.rar', '.tar', '.gz'],
-        'Scripts': ['.py', '.js', '.sh', '.bat'],
-        'Programs': ['.exe', '.msi', '.dmg']}
 
 # organization logic
 
@@ -73,9 +109,12 @@ for file in files:
                  destination = os.path.join(target_folder, file)
 
                  try:
-                     shutil.move(file_path, destination)
+                     src = file_path
+                     dst = destination
+                     shutil.move(src, dst)
+
                      write_log(f"{file} -> {folder}")
-                     write_undo(file_path, destination)
+                     write_undo(src, dst)
                      print(f"Moved: {file} -> {folder} folder")
                  except Exception as e:
                     print(f"Error moving file {file}: {e}")
@@ -97,9 +136,12 @@ for file in files:
             destination = os.path.join(other_folder, file)
 
             try:
-                shutil.move(file_path, destination)
+                src = file_path
+                dst = destination
+                shutil.move(src, dst)
+
                 write_log(f"{file} -> Others")
-                write_undo(file_path, destination)
+                write_undo(src, dst)
                 print(f"Moved: {file} -> Others folder")
             except Exception as e:
                 print(f"Error moving file {file}: {e}")
