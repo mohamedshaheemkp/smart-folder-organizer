@@ -5,6 +5,8 @@ import shutil
 import time
 import json
 import argparse
+import tkinter as tk
+from tkinter import filedialog, messagebox
 
 # ---------------- LOG FUNCTIONS ---------------- #
 
@@ -33,15 +35,15 @@ def write_summary():
 
 def undo_changes():
     if not os.path.exists("undo_log.txt"):
-        print("No undo log found.")
-        return
+        return "No undo log found."
+        
 
     with open("undo_log.txt", "r") as file:
         lines = file.readlines()
 
     if not lines:
-        print("No actions to undo.")
-        return
+        return "No actions to undo."
+        
 
     for line in reversed(lines):
         dst, src = line.strip().split("|")
