@@ -1,5 +1,4 @@
 print("Smart Folder Organizer ")
-
 import os
 import shutil
 import time
