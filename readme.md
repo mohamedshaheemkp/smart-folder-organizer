@@ -36,7 +36,7 @@ SmartFolderOrganizer/
 ├── log.txt
 ├── undo_log.txt
 └── README.md
-
+// file extensions and their corresponding folders in "config.json"
 ▶️ How to Run
 Open a terminal / command prompt
 Navigate to the project folder
