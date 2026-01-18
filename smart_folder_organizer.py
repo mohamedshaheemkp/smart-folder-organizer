@@ -8,6 +8,25 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 
+# ================= DEFAULT CONFIG =================
+
+def ensure_config():
+    default_config = {
+        "categories": {
+            "Images": [".jpg", ".jpeg", ".png", ".gif"],
+            "Documents": [".pdf", ".docx", ".txt"],
+            "Videos": [".mp4", ".mkv"],
+            "Music": [".mp3", ".wav"],
+            "Archives": [".zip", ".rar"]
+        },
+        "enable_unknown_folder": True,
+        "unknown_folder_name": "Others"
+    }
+
+    if not os.path.exists("config.json"):
+        with open("config.json", "w", encoding="utf-8") as f:
+            json.dump(default_config, f, indent=4)
+
 # ================= LOG FUNCTIONS ==================
 
 def write_log(message):
@@ -124,6 +143,8 @@ def organize_files(fpath, categories, enable_unknown, unknown_name, dry_run=Fals
 
 
 def cli_mode():
+    ensure_config()
+
     parser = argparse.ArgumentParser(description="Smart Folder Organizer")
     parser.add_argument("fpath", help="Folder path")
     parser.add_argument("--dry-run", action="store_true", help="Preview only")
@@ -172,6 +193,8 @@ def apply_dark_theme(root):
 
 
 def gui_mode():
+    ensure_config()
+
     root = tk.Tk()
     root.title("Smart Folder Organizer")
     root.geometry("520x360")
