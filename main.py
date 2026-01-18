@@ -81,14 +81,14 @@ except json.JSONDecodeError:
 
 # organization logic
 
-try:
-    files = os.listdir(fpath)
-except PermissionError:
-    print("Permission denied to access the folder.")
-    exit()
-
-for file in files:
-    file_path = os.path.join(fpath, file)
+def organize_files(fpath, extensions, dry_run):
+    try:
+        files = os.listdir(fpath)
+    except PermissionError:
+        print("Permission denied to access the folder.")
+        exit()
+        for file in files:
+            file_path = os.path.join(fpath, file)
 
 # skip folders and shortcuts
 
@@ -146,5 +146,18 @@ for file in files:
             except Exception as e:
                 print(f"Error moving file {file}: {e}")
                 write_log(f"Error moving file {file}: {e}")
-            
-print("Folder Organization complete.")
+
+# run organization
+organize_files(fpath, extensions, dry_run)
+
+if dry_run:
+    print("\nDry run completed. Do you want to run the organizer normally now? (yes/no):").strip().lower()
+
+    if confirm == "yes":
+        print("Running organizer normally...\n")
+        organize_files(fpath, extensions, dry_run=False)
+        print("Folder Organization complete.")
+    else:
+        print("Dry run ended. No changes were made.")
+else:
+    print("\nOrganization complete.")
