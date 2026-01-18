@@ -17,6 +17,18 @@ def write_undo(src, dst):
     with open("undo_log.txt", "a") as ulog:
         ulog.write(f"{dst}|{src}\n")
 
+# ------------------ SUMMARY -------------------- #
+summary = {}
+
+def update_summary(folder):
+    summary[folder] = summary.get(folder, 0) + 1
+
+def write_summary():
+    with open("summary.txt", "w") as s:
+        s.write("Smart Folder Organizer Summary\n")
+        for folder, count in summary.items():
+            s.write(f"{folder}: {count} files\n")
+
 # ---------------- UNDO FUNCTION ---------------- #
 
 def undo_changes():
