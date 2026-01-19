@@ -9,7 +9,11 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 
-#============= GLASS THEME ===============
+#============= GLASS THEME ==========
+GLASS_BG = "#1e1e1e"
+GLASS_PANEL = "#2a2a2a" 
+GLASS_BORDER = "#3a3a3a"
+GLASS_ACCENT = "#5dade2"
 
 # ================= DEFAULT CONFIG =================
 
@@ -204,18 +208,33 @@ def apply_dark_theme(root):
     style = ttk.Style(root)
     style.theme_use("default")
 
-    style.configure(".", background="#121212", foreground="white")
-    style.configure("TFrame", background="#121212")
-    style.configure("TLabel", background="#121212", foreground="white")
-    style.configure("TButton", background="#1e88e5", foreground="white", padding=8)
-    style.map("TButton", background=[("active", "#1565c0")])
-    style.configure("TEntry", fieldbackground="#1e1e1e", foreground="white")
-    style.configure("TCheckbutton", background="#121212", foreground="white")
+    style.configure(".", background=GLASS_BG, foreground="white")
+    style.configure("TFrame", background=GLASS_BG)
+    style.configure("TLabel", background=GLASS_PANEL, foreground="white")
+
+    style.configure(
+        "Glass.TButton",
+        background=GLASS_PANEL,
+        foreground="white",
+        borderwidth=0,
+        padding=10
+    )
+
+    style.map(
+        "Glass.TButton",
+        background=[
+            ("active", "#3b3b3b"),
+            ("pressed", "#4b4b4b")
+        ]
+    )
+
+    style.configure("TEntry", fieldbackground="#1f1f1f", foreground="white")
+    style.configure("TCheckbutton", background=GLASS_BG, foreground="white")
 
 #===================== clear fun in gui ======================
 
 def clear_log_file(file_path, label):
-    if os.path.exists(file_path):
+    if not os.path.exists(file_path):
         messagebox.showinfo("Info", f"No {label} to clear.")
         return
     
@@ -235,13 +254,16 @@ def gui_mode():
     root.title("Smart Folder Organizer")
 
     root.geometry("900x400")
-    root.configure(bg="#1e1e1e")
+    root.configure(bg=GLASS_BG)
 
     root.resizable(True, True)
     root.state("zoomed")
 
     root.attributes("-alpha", 0.9)
     
+    path_var = tk.StringVar()
+    dry_var = tk.BooleanVar()
+
     def update_log_buttons(*args):
         state = "normal" if dry_var.get() else "disabled"
         view_log_btn.config(state=state)
@@ -273,25 +295,23 @@ def gui_mode():
 
     apply_dark_theme(root)
 
-    main = ttk.Frame(root, padding=20)
-    main.pack(fill="both", expand=True)
+    main = ttk.Frame(root, bg=GLASS_PANEL, highlightbackground=GLASS_BORDER, 
+                     highlightthickness=1)
+    main.pack(fill="both", expand=True, padx=20, pady=20)
 
     ttk.Label(
         main,
         text="Smart Folder Organizer",
         font=("Segoe UI", 16, "bold"),
-        foreground="#1e88e5"
+        foreground=GLASS_ACCENT
     ).pack(pady=(0, 15))
-
-    path_var = tk.StringVar()
-    dry_var = tk.BooleanVar()
 
     ttk.Entry(main, textvariable=path_var).pack(fill="x", pady=5)
 
     def browse():
         path_var.set(filedialog.askdirectory())
 
-    ttk.Button(main, text="Browse Folder", command=browse).pack(pady=5)
+    ttk.Button(main, text="Browse Folder", command=browse, style="Glass.TButton").pack(pady=5)
 
     ttk.Checkbutton(
         main,
@@ -325,16 +345,16 @@ def gui_mode():
     clear_log_btn = ttk.Button(
         log_btn_frame,
         text="Clear Log",
-        command=lambda: clear_log_file("log.txt", "log")
+        command=lambda: clear_log_file("log.txt", "log"),
         state="disabled"
-    )
+        )
 
     clear_undo_btn = ttk.Button(
         log_btn_frame,
         text="Clear Undo Log",
-        command=lambda: clear_log_file("undo_log.txt", "undo log")
+        command=lambda: clear_log_file("undo_log.txt", "undo log"),
         state="disabled"
-    )
+        )
 
     log_btn_frame.columnconfigure(0, weight=1)
     log_btn_frame.columnconfigure(1, weight=1)
@@ -375,8 +395,8 @@ def gui_mode():
     btn_frame.columnconfigure(0, weight=1)
     btn_frame.columnconfigure(1, weight=1)
 
-    organize_btn = ttk.Button(btn_frame, text="Organize", command=run)
-    undo_btn = ttk.Button(btn_frame, text="Undo", command=undo)
+    organize_btn = ttk.Button(btn_frame, text="Organize", command=run, style="Glass.TButton")
+    undo_btn = ttk.Button(btn_frame, text="Undo", command=undo, style="Glass.TButton")
 
     organize_btn.grid(row=0, column=0, sticky="ew", padx=10)
     undo_btn.grid(row=0, column=1, sticky="ew", padx=10)
