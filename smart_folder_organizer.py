@@ -1,3 +1,4 @@
+from logging import root
 import os
 import shutil
 import time
@@ -7,6 +8,8 @@ import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import ttk
+
+#============= GLASS THEME ===============
 
 # ================= DEFAULT CONFIG =================
 
@@ -172,6 +175,27 @@ def cli_mode():
 
     print(result)
 
+# ==================== log data display ===================
+
+def show_log_window(title, file_path):
+    win = tk.Toplevel()
+    win.title(title)
+    win.geometry("600x400")
+
+    text = tk.Text(win, wrap="word", bg="#1e1e1e", fg="white")
+    text.pack(fill="both", expand=True)
+
+    scrollbar = ttk.Scrollbar(text, command=text.yview)
+    text.configure(yscrollcommand=scrollbar.set)
+    scrollbar.pack(side="right", fill="y")
+
+    if not os.path.exists(file_path):
+        text.insert("end", "No log found.")
+        return
+    with open(file_path, "r", encoding="utf-8") as f:
+        text.insert("end", f.read())
+    
+    text.configure(state="disabled")
 
 # ===================== THEME ======================
 
@@ -188,6 +212,18 @@ def apply_dark_theme(root):
     style.configure("TEntry", fieldbackground="#1e1e1e", foreground="white")
     style.configure("TCheckbutton", background="#121212", foreground="white")
 
+#===================== clear fun in gui ======================
+
+def clear_log_file(file_path, label):
+    if os.path.exists(file_path):
+        messagebox.showinfo("Info", f"No {label} to clear.")
+        return
+    
+    confirm = messagebox.askyesno("Confirm", f"Are you sure you want to clear the {label}?")
+
+    if confirm:
+        open(file_path, "w").close()
+        messagebox.showinfo("Info", f"{label} cleared.")
 
 # ====================== GUI =======================
 
@@ -197,9 +233,43 @@ def gui_mode():
 
     root = tk.Tk()
     root.title("Smart Folder Organizer")
-    root.geometry("520x360")
-    root.configure(bg="#121212")
-    root.resizable(False, False)
+
+    root.geometry("900x400")
+    root.configure(bg="#1e1e1e")
+
+    root.resizable(True, True)
+    root.state("zoomed")
+
+    root.attributes("-alpha", 0.9)
+    
+    def update_log_buttons(*args):
+        state = "normal" if dry_var.get() else "disabled"
+        view_log_btn.config(state=state)
+        view_undo_btn.config(state=state)
+        clear_log_btn.config(state=state)
+        clear_undo_btn.config(state=state)
+
+    dry_var.trace_add("write", update_log_buttons)
+
+
+    is_fullscreen = False
+
+    def toggle_fullscreen(event=None):
+        nonlocal is_fullscreen
+        is_fullscreen = not is_fullscreen
+        root.attributes("-fullscreen", is_fullscreen)
+
+    def exit_fullscreen(event=None):
+        nonlocal is_fullscreen
+        is_fullscreen = False
+        root.attributes("-fullscreen", False)
+        is_fullscreen = False
+        root.attributes("-fullscreen", False)
+
+    root.bind("<F11>", toggle_fullscreen)
+    root.bind("<Escape>", exit_fullscreen)
+
+#====dark theme ====
 
     apply_dark_theme(root)
 
@@ -216,7 +286,7 @@ def gui_mode():
     path_var = tk.StringVar()
     dry_var = tk.BooleanVar()
 
-    ttk.Entry(main, textvariable=path_var, width=55).pack(pady=5)
+    ttk.Entry(main, textvariable=path_var).pack(fill="x", pady=5)
 
     def browse():
         path_var.set(filedialog.askdirectory())
@@ -227,10 +297,52 @@ def gui_mode():
         main,
         text="Dry Run (Preview Only)",
         variable=dry_var
-    ).pack(pady=5)
+    ).pack(pady=(5, 2))
 
     status = ttk.Label(main, text="", wraplength=460)
     status.pack(pady=15)
+    
+    log_btn_frame = ttk.Frame(main)
+    log_btn_frame.pack(fill="x", pady=(0,10))
+
+    for i in range(4):
+        log_btn_frame.columnconfigure(i, weight=1)
+
+    view_log_btn = ttk.Button(
+        log_btn_frame,
+        text="View Log",
+        command=lambda: show_log_window("Log data", "log.txt"),
+        state="disabled"
+    )
+    
+    view_undo_btn = ttk.Button(
+        log_btn_frame,
+        text="View Undo Log",
+        command=lambda: show_log_window("Undo Log", "undo_log.txt"),
+        state="disabled"
+    )
+
+    clear_log_btn = ttk.Button(
+        log_btn_frame,
+        text="Clear Log",
+        command=lambda: clear_log_file("log.txt", "log")
+        state="disabled"
+    )
+
+    clear_undo_btn = ttk.Button(
+        log_btn_frame,
+        text="Clear Undo Log",
+        command=lambda: clear_log_file("undo_log.txt", "undo log")
+        state="disabled"
+    )
+
+    log_btn_frame.columnconfigure(0, weight=1)
+    log_btn_frame.columnconfigure(1, weight=1)
+
+    view_log_btn.grid(row=0, column=0, sticky="ew", padx=10)
+    view_undo_btn.grid(row=0, column=1, sticky="ew", padx=10)
+    clear_log_btn.grid(row=0, column=2, sticky="ew", padx=10)
+    clear_undo_btn.grid(row=0, column=3, sticky="ew", padx=10)
 
     def run():
         if not path_var.get():
@@ -258,10 +370,16 @@ def gui_mode():
         status.config(text=undo_changes())
 
     btn_frame = ttk.Frame(main)
-    btn_frame.pack(pady=10)
+    btn_frame.pack(fill = "x", pady=10)
 
-    ttk.Button(btn_frame, text="Organize", command=run).pack(side="left", padx=10)
-    ttk.Button(btn_frame, text="Undo", command=undo).pack(side="left", padx=10)
+    btn_frame.columnconfigure(0, weight=1)
+    btn_frame.columnconfigure(1, weight=1)
+
+    organize_btn = ttk.Button(btn_frame, text="Organize", command=run)
+    undo_btn = ttk.Button(btn_frame, text="Undo", command=undo)
+
+    organize_btn.grid(row=0, column=0, sticky="ew", padx=10)
+    undo_btn.grid(row=0, column=1, sticky="ew", padx=10)
 
     root.mainloop()
 
