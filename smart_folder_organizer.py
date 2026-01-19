@@ -15,6 +15,12 @@ GLASS_PANEL = "#2a2a2a"
 GLASS_BORDER = "#3a3a3a"
 GLASS_ACCENT = "#5dade2"
 
+FONT_TITLE = ("Segoe UI", 18, "bold")
+FONT_SECTION = ("Segoe UI", 12, "bold")
+FONT_BODY = ("Segoe UI", 10)
+FONT_BUTTON = ("Segoe UI", 10)
+FONT_STATUS = ("Segoe UI", 9)
+
 # ================= DEFAULT CONFIG =================
 
 def ensure_config():
@@ -61,12 +67,25 @@ def undo_changes():
         return "No actions to undo."
 
     for line in reversed(lines):
-        dst, src = line.strip().split("|")
+        parts = line.strip().split("|")
+        if len(parts) != 2:
+            continue
+        dst, src = parts
         if os.path.exists(dst):
             os.makedirs(os.path.dirname(src), exist_ok=True)
             shutil.move(dst, src)
 
     open("undo_log.txt", "w").close()
+
+    if os.path.exists("created_folders.txt"):
+        with open("created_folders.txt", "r", encoding="utf-8") as f:
+            folders = f.readlines()
+        for folder in sorted(folders, reverse=True):
+            folder = folder.strip()
+            if os.path.exists(folder) and not os.listdir(folder):
+                os.rmdir(folder)
+        os.remove("Created_folders.txt")
+
     write_log("Undo operation completed.")
     return "Undo operation completed."
 
@@ -93,7 +112,7 @@ def load_config():
 
 
 # ================= ORGANIZE LOGIC =================
-
+created_folders = set()
 
 def organize_files(fpath, categories, enable_unknown, unknown_name, dry_run=False):
     if not os.path.exists(fpath):
@@ -125,7 +144,9 @@ def organize_files(fpath, categories, enable_unknown, unknown_name, dry_run=Fals
                 destination = os.path.join(target_folder, file)
 
                 if not dry_run:
-                    os.makedirs(target_folder, exist_ok=True)
+                    if not os.path.exists(target_folder):
+                        os.makedirs(target_folder)
+                        created_folders.add(target_folder)
                     shutil.move(file_path, destination)
                     write_log(f"{file} -> {folder}")
                     write_undo(file_path, destination)
@@ -138,10 +159,16 @@ def organize_files(fpath, categories, enable_unknown, unknown_name, dry_run=Fals
             destination = os.path.join(other_folder, file)
 
             if not dry_run:
-                os.makedirs(other_folder, exist_ok=True)
+                if not os.path.exists(other_folder):
+                    os.makedirs(other_folder)
+                    created_folders.add(other_folder)
                 shutil.move(file_path, destination)
                 write_log(f"{file} -> {unknown_name}")
                 write_undo(file_path, destination)
+        if not dry_run and created_folders:
+            with open("created_folders.txt", "w", encoding="utf-8") as f:
+                for folder in created_folders:
+                    f.write(folder + "\n")
 
     return "Dry run completed." if dry_run else "Folder organization complete."
 
@@ -217,7 +244,8 @@ def apply_dark_theme(root):
         background=GLASS_PANEL,
         foreground="white",
         borderwidth=0,
-        padding=10
+        font=FONT_BUTTON,
+        padding=(14, 8)
     )
 
     style.map(
@@ -230,6 +258,11 @@ def apply_dark_theme(root):
 
     style.configure("TEntry", fieldbackground="#1f1f1f", foreground="white")
     style.configure("TCheckbutton", background=GLASS_BG, foreground="white")
+
+# ===================== VERTICAL SPACING ======================
+
+def vspace(parent, h=12):
+    tk.Frame(parent, height=h, bg=GLASS_PANEL).pack()
 
 #===================== clear fun in gui ======================
 
@@ -259,7 +292,7 @@ def gui_mode():
     root.resizable(True, True)
     root.state("zoomed")
 
-    root.attributes("-alpha", 0.9)
+    root.attributes("-alpha", 0.97)
     
     path_var = tk.StringVar()
     dry_var = tk.BooleanVar()
@@ -295,23 +328,40 @@ def gui_mode():
 
     apply_dark_theme(root)
 
-    main = ttk.Frame(root, bg=GLASS_PANEL, highlightbackground=GLASS_BORDER, 
+    main = tk.Frame(root, bg=GLASS_PANEL, highlightbackground=GLASS_BORDER, 
                      highlightthickness=1)
-    main.pack(fill="both", expand=True, padx=20, pady=20)
+    main.pack(fill="both", expand=True, padx=32, pady=28)
 
     ttk.Label(
         main,
         text="Smart Folder Organizer",
-        font=("Segoe UI", 16, "bold"),
-        foreground=GLASS_ACCENT
-    ).pack(pady=(0, 15))
+        font=FONT_TITLE,
+        foreground=GLASS_ACCENT,
+        background=GLASS_PANEL
+    ).pack(anchor="w", pady=(0, 20))
 
-    ttk.Entry(main, textvariable=path_var).pack(fill="x", pady=5)
+    # Section frame
+    section = tk.Frame(main, bg=GLASS_PANEL)
+    section.pack(fill="x", pady=(0, 20))
 
+    # Path entry (macOS spacing)
+    ttk.Entry(
+        section,
+        textvariable=path_var
+    ).pack(fill="x", pady=(0, 10))
+
+    # Browse button (separate row)
     def browse():
         path_var.set(filedialog.askdirectory())
 
-    ttk.Button(main, text="Browse Folder", command=browse, style="Glass.TButton").pack(pady=5)
+    ttk.Button(
+        section,
+        text="Browse Folder",
+        command=browse,
+        style="Glass.TButton"
+    ).pack(anchor="w", pady=(0, 18))
+
+    vspace(main, 16)
 
     ttk.Checkbutton(
         main,
@@ -319,8 +369,9 @@ def gui_mode():
         variable=dry_var
     ).pack(pady=(5, 2))
 
-    status = ttk.Label(main, text="", wraplength=460)
-    status.pack(pady=15)
+    status = ttk.Label(main, text="", wraplength=520,
+                       font=FONT_STATUS, background=GLASS_PANEL,justify="left")
+    status.pack(anchor="w", pady=(12, 0))
     
     log_btn_frame = ttk.Frame(main)
     log_btn_frame.pack(fill="x", pady=(0,10))
@@ -404,6 +455,13 @@ def gui_mode():
     root.mainloop()
 
 # ====================== MAIN ======================
+
+if getattr(sys, 'frozen', False):
+    os.chdir(os.path.dirname(sys.executable))
+
+if os.path.exists("app.lock"):
+    sys.exit()
+open("app.lock", "w").close()
 
 if __name__ == "__main__":
     # GUI by default (double-click friendly)
